@@ -3,6 +3,8 @@ import sys
 from src.api_request import ApiRequest
 from src.openmeteo_parser import OpenMeteoParser
 from src.data_cleaner import DataCleaner
+from src.preview_data import PreviewData
+from src.graph_enum import GraphType
 
 
 def main() -> None:
@@ -102,7 +104,9 @@ def main() -> None:
     cleaned = cleaner.clean()
 
     print("=== CLEANED DATA ===")
-    print(cleaned)
+    #draw data
+    preview = PreviewData(cleaned)
+    preview.draw(GraphType.LINEAR, 'date', 'cloud_cover')
 
 
 if __name__ == '__main__':
