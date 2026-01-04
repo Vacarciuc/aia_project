@@ -57,12 +57,14 @@ class DataCleaner:
         if pd is not None and isinstance(self.raw_data, pd.DataFrame):
             df = self._ensure_types_df(self.raw_data)
             df = self._handle_missing_df(df)
+            df = self._drop_empty_columns_df(df)
             df = self._remove_duplicates_df(df)
             df = self._handle_outliers_df(df)
             return df.reset_index(drop=True)
         if isinstance(self.raw_data, list) and (len(self.raw_data) == 0 or isinstance(self.raw_data[0], dict)):
             rows = self._ensure_types_rows(self.raw_data)
             rows = self._handle_missing_rows(rows)
+            rows = self._drop_empty_columns_rows(rows)
             rows = self._remove_duplicates_rows(rows)
             rows = self._handle_outliers_rows(rows)
             return rows
@@ -139,6 +141,28 @@ class DataCleaner:
                 out[k] = out[k].fillna(0)
         return out
 
+    def _drop_empty_columns_df(self, df: 'pd.DataFrame') -> 'pd.DataFrame':
+        """
+        Elimină coloanele unde toate valorile sunt NaN sau 0.
+        - Se aplică atât pe coloane de măsurători, cât și (opțional) pe altele, dar păstrează metadatele standard.
+        """
+        if pd is None:
+            return df
+        keep_meta = {"date", "hour", "latitude", "longitude", "time"}
+        out = df.copy()
+        drop = []
+        for c in out.columns:
+            if c in keep_meta:
+                continue
+            series = out[c]
+            # true dacă toate valorile sunt NaN sau 0
+            all_empty = bool(((series.isna()) | (series == 0)).all())
+            if all_empty:
+                drop.append(c)
+        if drop:
+            out = out.drop(columns=drop)
+        return out
+
     def _remove_duplicates_df(self, df: 'pd.DataFrame') -> 'pd.DataFrame':
         """
         Elimină duplicatele din DataFrame.
@@ -160,18 +184,25 @@ class DataCleaner:
         if not cols:
             return df
         out = df.copy()
-        # Calculează percentilă 1 și 99 doar pe coloanele numerice.
         numeric_cols = [c for c in cols if pd.api.types.is_numeric_dtype(out[c])]
         if not numeric_cols:
             return out
         q_low = out[numeric_cols].quantile(0.01)
         q_high = out[numeric_cols].quantile(0.99)
         for c in numeric_cols:
-            # Clip valorile numai dacă percentila inferioară < superioară
             low = q_low[c]
             high = q_high[c]
-            if pd.notna(low) and pd.notna(high) and low < high:
-                out[c] = out[c].clip(lower=low, upper=high)
+            # Convert to float if possible for robust comparisons
+            try:
+                low_f = float(low)
+            except Exception:
+                low_f = None
+            try:
+                high_f = float(high)
+            except Exception:
+                high_f = None
+            if low_f is not None and high_f is not None and low_f < high_f:
+                out[c] = out[c].clip(lower=low_f, upper=high_f)
         return out
 
     # --- Pași pe listă de rânduri ---
@@ -256,7 +287,6 @@ class DataCleaner:
             new_r = dict(r)
             for k in measure_keys:
                 v = new_r.get(k)
-                # v poate fi NaN (float('nan')) din pasul anterior
                 try:
                     fv = float(v) if v is not None else float('nan')
                 except Exception:
@@ -273,6 +303,35 @@ class DataCleaner:
                     except Exception:
                         val = 0.0
                     new_r[k] = val
+            out.append(new_r)
+        return out
+
+    def _drop_empty_columns_rows(self, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """
+        Elimină cheile (coloanele) unde toate valorile sunt NaN-like sau 0 în lista de rânduri.
+        - Păstrează metadatele standard: date, hour, latitude, longitude, time.
+        """
+        if not rows:
+            return rows
+        keep_meta = {"date", "hour", "latitude", "longitude", "time"}
+        keys = list(rows[0].keys())
+        to_check = [k for k in keys if k not in keep_meta]
+        drop_keys: list[str] = []
+        for k in to_check:
+            all_empty = True
+            for r in rows:
+                v = r.get(k)
+                is_empty = (self._is_nan_like(v) or v == 0)
+                if not is_empty:
+                    all_empty = False
+                    break
+            if all_empty:
+                drop_keys.append(k)
+        if not drop_keys:
+            return rows
+        out: list[dict[str, Any]] = []
+        for r in rows:
+            new_r = {kk: vv for kk, vv in r.items() if kk not in drop_keys}
             out.append(new_r)
         return out
 
@@ -367,10 +426,12 @@ class DataCleaner:
         for c in cols:
             cleaned[c] = pd.to_numeric(cleaned[c], errors="coerce")
         cleaned[cols] = cleaned[cols].fillna(0)
-        if "latitude" in cleaned:
-            cleaned["latitude"] = pd.to_numeric(cleaned["latitude"], errors="coerce").fillna(0)
-        if "longitude" in cleaned:
-            cleaned["longitude"] = pd.to_numeric(cleaned["longitude"], errors="coerce").fillna(0)
+        if pd is not None and "latitude" in cleaned.columns:
+            cleaned["latitude"] = pd.to_numeric(cleaned["latitude"], errors="coerce")
+            cleaned["latitude"] = cleaned["latitude"].fillna(0)
+        if pd is not None and "longitude" in cleaned.columns:
+            cleaned["longitude"] = pd.to_numeric(cleaned["longitude"], errors="coerce")
+            cleaned["longitude"] = cleaned["longitude"].fillna(0)
         return cleaned.reset_index(drop=True)
 
     def _clean_rows(self, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
