@@ -35,13 +35,39 @@ def main() -> None:
         "temperature_2m",
         "relative_humidity_2m",
         "dew_point_2m",
-        "rain",
+        "apparent_temperature",
         "precipitation_probability",
-        "visibility",
-        "wind_speed_10m",
-        "cloud_cover",
+        "precipitation",
+        "rain",
+        "showers",
+        "snowfall",
+        "snow_depth",
+        "weather_code",
+        "pressure_msl",
         "surface_pressure",
+        "cloud_cover",
+        "cloud_cover_low",
+        "cloud_cover_mid",
+        "cloud_cover_high",
+        "visibility",
+        "evapotranspiration",
+        "et0_fao_evapotranspiration",
+        "vapour_pressure_deficit",
+        "wind_speed_10m",
+        "wind_speed_80m",
+        "wind_direction_10m",
+        "wind_direction_80m",
+        "temperature_80m",
+        "temperature_120m",
+        "soil_temperature_0cm",
+        "soil_temperature_6cm",
+        "soil_temperature_18cm",
+        "soil_temperature_54cm",
+        "soil_moisture_0_to_1cm",
+        "soil_moisture_1_to_3cm",
+        "soil_moisture_3_to_9cm"
     ]
+
     try:
         extra_params: dict[str, str] = {}
         if start_date:
@@ -55,6 +81,7 @@ def main() -> None:
             current=["cloud_cover"],
             extra_params=extra_params if extra_params else {},
         )
+
     except Exception as e:
         print(f"Open-Meteo request failed: {e}")
         return
