@@ -2,3 +2,5 @@
 ./.idea
 .venv
 .idea
+.cache.sqlite
+/cached_data
