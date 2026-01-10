@@ -3,7 +3,7 @@ from pandas import DataFrame
 from os import path, makedirs
 
 class DataType(Enum):
-    DartyData = "dirty_data",
+    DirtyData = "dirty_data",
     CleanedData = "cleaned_data",
     AnalyzedData = "analyzed_data",
 

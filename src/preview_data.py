@@ -13,13 +13,13 @@ class PreviewData:
         if graph_type == GraphType.LINEAR:
             return self._draw_linear(columns)
         elif graph_type == GraphType.SCATTER:
-            return self.draw_scatter(columns)
+            return self._draw_scatter(columns)
         elif graph_type == GraphType.PIE:
             return self.draw_pie()
         elif graph_type == GraphType.BAR:
             return self.draw_bar()
         elif graph_type == GraphType.HISTOGRAM:
-            return self.draw_histogram(columns)
+            return self._draw_histogram(columns)
         return None
 
     def _draw_linear(self, list_columns):
@@ -39,7 +39,7 @@ class PreviewData:
 
 
 
-    def draw_scatter(self, list_columns):
+    def _draw_scatter(self, list_columns):
         if len(list_columns) == 0 & len(list_columns) > 2:
             throw_error("Scatter plot requires exactly two columns.")
         x_columns = list_columns[0]
@@ -61,18 +61,18 @@ class PreviewData:
     def draw_bar(self):
         return self.data
 
-    def draw_histogram(self, columns):
-        if "date" not in columns:
-            throw_error("Histogram requires a date column.")
-
-        date_column = columns["date"]
+    def _draw_histogram(self, columns):
+        if len(columns) == 0 | len(columns) > 1:
+            throw_error("Histogram requires exactly one column.")
+        column = columns[0]
         df = pd.DataFrame(self.data)
-        df[date_column] = pd.to_datetime(df[date_column], errors="coerce")
-        df["year"] = df[date_column].dt.year
-        count_by_year = df.groupby("year").size()
+        if column not in df.columns:
+            raise ValueError(f"Coloana '{column}' nu există în date.")
+        values = pd.to_numeric(df[column], errors="coerce").dropna()
         plt.figure(figsize=(10, 6))
-        plt.bar(count_by_year.index, count_by_year.values)
-        plt.xlabel("An")
-        plt.ylabel("Număr de înregistrări")
-        plt.title("Histogramă – număr de înregistrări pe an")
+        plt.hist(values, bins=20)
+        plt.xlabel(column)
+        plt.ylabel("Frecvență")
+        plt.title(f"Histogramă – distribuția {column}")
+        plt.grid(True, alpha=0.3)
         plt.show()
