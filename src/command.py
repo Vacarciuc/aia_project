@@ -1,7 +1,9 @@
 from os import path
 from enum import Enum
 import sys
+
 import pandas as pd
+from pandas import DataFrame
 from src.api_request import ApiRequest
 from src.openmeteo_parser import OpenMeteoParser
 from src.data_cleaner import DataCleaner
@@ -22,15 +24,27 @@ class RequestParams:
     end_date: str
 
 class Command:
-    def execute(self, command: CommandEnum, request_params: RequestParams) -> None:
+    def execute(self, command: CommandEnum, request_params: RequestParams) -> DataFrame | None:
+        file_name = 'weather_data.xlsx'
         if command == CommandEnum.API_REQUEST:
             self._api_request(request_params)
+            return self._read_file(DataType.DirtyData, file_name)
         elif command == CommandEnum.SAVE_CLEAN_DATA:
             self._save_clean_data()
+            return self._read_file(DataType.CleanedData, file_name)
         elif command == CommandEnum.ANALYZE_DATA:
             self._analyze_data()
+            return self._read_file(DataType.AnalyzedData, file_name)
         else:
             print("Unknown command")
+
+
+
+    def _read_file(self, data_type:DataType, file_name:str) -> DataFrame:
+        base_dir = str(path.dirname(__file__))
+        file_path = path.join(base_dir, '..\\', 'cached_data', data_type.value[0], file_name)
+        df = pd.read_excel(file_path)
+        return df
 
 
 
@@ -117,25 +131,35 @@ class Command:
     def _save_darty_data(self, response, hourly_keys):
         parser = OpenMeteoParser(response)
         df = parser.to_dataframe(hourly_keys)
-        saved_data = SaveData(file_name='weather_data', data_type=DataType.DartyData)
+        saved_data = SaveData(file_name='weather_data', data_type=DataType.DirtyData)
         saved_data.save(df)
+        info_data = Analysis(df)
+        summary_stats = info_data.summary_statistics()
+        save_stats = SaveData(file_name='summary_statistics', data_type=DataType.DirtyData)
+        save_stats.save(summary_stats)
+        corr_matrix = info_data.correlation_matrix()
+        save_matrix = SaveData(file_name='corr_matrix', data_type=DataType.DirtyData)
+        save_matrix.save(corr_matrix)
 
     def _save_clean_data(self, ):
-        base_dir = str(path.dirname(__file__))
-        file_path = path.join(base_dir, '..\\', 'cached_data', 'dirty_data', 'weather_data.xlsx')
-        df = pd.read_excel(file_path)
+        df = self._read_file(DataType.DirtyData, file_name='weather_data.xlsx')
         cleaner = DataCleaner(raw_data=df)
         clean_data = cleaner.clean()
-        saved_cleaned_data = SaveData(file_name='weather_clean_data', data_type=DataType.CleanedData)
+        saved_cleaned_data = SaveData(file_name='weather_data', data_type=DataType.CleanedData)
         saved_cleaned_data.save(pd.DataFrame(clean_data))
+        info_data = Analysis(clean_data)
+        summary_stats = info_data.summary_statistics()
+        save_stats = SaveData(file_name='summary_statistics', data_type=DataType.CleanedData)
+        save_stats.save(summary_stats)
+        corr_matrix = info_data.correlation_matrix()
+        save_matrix = SaveData(file_name='corr_matrix', data_type=DataType.CleanedData)
+        save_matrix.save(corr_matrix)
 
     def _analyze_data(self):
-        base_dir = str(path.dirname(__file__))
-        file_path = path.join(base_dir, '..\\', 'cached_data', 'cleaned_data', 'weather_clean_data.xlsx')
-        df = pd.read_excel(file_path)
+        df = self._read_file(DataType.CleanedData, file_name='weather_data.xlsx')
         feature_engineer = FeatureEngineer(df)
         data_fe = feature_engineer.execute()
-        saved_data_fe = SaveData(file_name='weather_analyze_data', data_type=DataType.AnalyzedData)
+        saved_data_fe = SaveData(file_name='weather_data', data_type=DataType.AnalyzedData)
         saved_data_fe.save(data_fe)
         info_data = Analysis(data_fe)
         summary_stats = info_data.summary_statistics()
