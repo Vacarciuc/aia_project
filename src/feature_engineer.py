@@ -5,62 +5,50 @@ import numpy as np
 
 class FeatureEngineer:
     def __init__(self, data: DataFrame):
-        self.data = data.copy()
+        self.data = data
 
     def execute(self) -> DataFrame:
-        self._prepare_datetime()
-        self._add_time_features()
-        self._add_wind_features()
-        self._add_cloud_features()
-        self._add_thermal_features()
-        self._cleanup_columns()
+        self._make_numeric_date_time()
+        self._crate_season()
+        self._crate_angle_of_sun()
         return self.data
 
-    def _prepare_datetime(self):
+    # drop date time by column
+    def _make_numeric_date_time(self):
         self.data['date'] = pd.to_datetime(self.data['date'])
-
-    def _add_time_features(self):
+        self.data['year'] = self.data['date'].dt.year
         self.data['month'] = self.data['date'].dt.month
-        self.data['hour'] = self.data['date'].dt.hour
+        self.data['day'] = self.data['date'].dt.day
 
-        self.data['month_sin'] = np.sin(2 * np.pi * self.data['month'] / 12)
-        self.data['month_cos'] = np.cos(2 * np.pi * self.data['month'] / 12)
+        self.data['hour'] = self.data['hour'].astype(str).str.slice(0,2).astype(int)
 
-        self.data['hour_sin'] = np.sin(2 * np.pi * self.data['hour'] / 24)
-        self.data['hour_cos'] = np.cos(2 * np.pi * self.data['hour'] / 24)
+        #drop old column
+        self.data = self.data.drop(columns=['date'])
 
-    def _add_wind_features(self):
-        direction_rad = np.deg2rad(self.data['wind_direction_10m'])
+    def _crate_season(self):
+        self.data['season'] = np.where(self.data['month'].isin([12, 1, 2]), 1,
+                              np.where(self.data['month'].isin([3, 4, 5]), 2,
+                              np.where(self.data['month'].isin([6, 7, 8]), 3,
+                                4)))
+        # 1 - winter, 2 - spring, 3 - summer, 4 - autumn
 
-        self.data['wind_u'] = self.data['wind_speed_10m'] * np.cos(direction_rad)
-        self.data['wind_v'] = self.data['wind_speed_10m'] * np.sin(direction_rad)
 
-    def _add_cloud_features(self):
-        self.data['cloud_verticality'] = (
-            self.data['cloud_cover_high'] - self.data['cloud_cover_low']
-        )
+    def _crate_angle_of_sun(self):
+        #if is day = 0 if is night = 180
+        # 90 is zenith
+        # init with nan
+        self.data['angle_of_sun'] = np.nan #todo solve, nan is not good for model
 
-    def _add_thermal_features(self):
-        self.data['heat_moisture_index'] = (
-            self.data['temperature_2m'] *
-            (1 - self.data['relative_humidity_2m'] / 100)
-        )
+        for day, group in self.data.groupby('day'):
+            day_indexes = group[group['is_day'] == 1].index
 
-    def _cleanup_columns(self):
-        drop_cols = [
-            'apparent_temperature',
-            'dew_point_2m',
-            'rain',
-            'pressure_msl',
-            'month',
-            'hour',
-            'wind_direction_10m',
-            'cloud_cover_low',
-            'cloud_cover_mid',
-            'cloud_cover_high'
-        ]
+            if len(day_indexes) < 2:
+                continue  # abnormal day, skip
 
-        self.data.drop(
-            columns=[c for c in drop_cols if c in self.data.columns],
-            inplace=True
-        )
+            step = 180 / (len(day_indexes) - 1)
+
+            for i, idx in enumerate(day_indexes):
+                self.data.loc[idx, 'angle_of_sun'] = i * step
+
+
+

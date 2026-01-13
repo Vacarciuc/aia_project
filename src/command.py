@@ -71,44 +71,22 @@ class Command:
 
         url = "https://archive-api.open-meteo.com/v1/archive?"
         hourly_keys = [
-            "temperature_2m",
-            "relative_humidity_2m",
-            "dew_point_2m",
-            "apparent_temperature",
-            "precipitation_probability",
-            "precipitation",
-            "rain",
-            "showers",
-            "snowfall",
-            "snow_depth",
-            "weather_code",
-            "pressure_msl",
-            "surface_pressure",
-            "cloud_cover",
-            "cloud_cover_low",
-            "cloud_cover_mid",
-            "cloud_cover_high",
-            "visibility",
-            "evapotranspiration",
-            "et0_fao_evapotranspiration",
-            "vapour_pressure_deficit",
-            "wind_speed_10m",
-            "wind_speed_80m",
-            "wind_direction_10m",
-            "wind_direction_80m",
-            "temperature_80m",
-            "temperature_120m",
-            "soil_temperature_0cm",
-            "soil_temperature_6cm",
-            "soil_temperature_18cm",
-            "soil_temperature_54cm",
-            "soil_moisture_0_to_1cm",
-            "soil_moisture_1_to_3cm",
-            "soil_moisture_3_to_9cm"
+            "is_day", "temperature_2m", "relative_humidity_2m", "dew_point_2m", "apparent_temperature",
+            "precipitation_probability", "precipitation", "rain", "showers", "snowfall", "snow_depth", "weather_code",
+            "pressure_msl", "surface_pressure", "cloud_cover", "cloud_cover_low", "cloud_cover_mid", "cloud_cover_high",
+            "visibility", "evapotranspiration", "et0_fao_evapotranspiration", "vapour_pressure_deficit",
+            "wind_speed_10m", "wind_speed_80m", "wind_speed_120m", "wind_direction_80m", "wind_direction_120m",
+            "wind_direction_180m", "wind_gusts_10m", "temperature_80m", "soil_temperature_0cm", "soil_temperature_6cm",
+            "soil_temperature_18cm", "soil_moisture_0_to_1cm", "soil_moisture_1_to_3cm", "soil_moisture_3_to_9cm",
+            "shortwave_radiation", "direct_radiation", "diffuse_radiation", "direct_normal_irradiance",
+            "global_tilted_irradiance", "terrestrial_radiation", "shortwave_radiation_instant",
+            "direct_radiation_instant", "diffuse_radiation_instant", "direct_normal_irradiance_instant",
+            "global_tilted_irradiance_instant", "terrestrial_radiation_instant"
         ]
 
         try:
-            extra_params: dict[str, str] = {}
+            extra_params: dict[str, str] = {"wind_speed_unit": "ms"}
+
             if start_date:
                 extra_params["start_date"] = start_date
             if end_date:
@@ -117,7 +95,6 @@ class Command:
             responses = requester.fetch_openmeteo(
                 url=url,
                 hourly=hourly_keys,
-                current=["cloud_cover"],
                 extra_params=extra_params if extra_params else {},
             )
             self._save_darty_data(responses[0], hourly_keys)
