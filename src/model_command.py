@@ -5,8 +5,10 @@ from src.model_gradient_boosting_regressor import TemperatureGBModel
 
 
 class ModelType(Enum):
-    RANDOM_FOREST_REGRESSOR = "RFR",
-    GRADIENT_BOOSTING_REGRESSOR = "GBR",
+    LINEAR_REGRESSOR = "LR", #easy model
+    PROPHET = "PR", #medium complexity model
+    RANDOM_FOREST_REGRESSOR = "RFR", #complex model
+
 
 #@todo improve params for model (test-train split, random state, etc)
 
@@ -15,29 +17,26 @@ class ModelCommand:
         self.data = data
 
     def execute(self, model_type: ModelType):
-        if model_type == ModelType.RANDOM_FOREST_REGRESSOR:
-            self._execute_random_forest_regressor()
-        elif model_type == ModelType.GRADIENT_BOOSTING_REGRESSOR:
-            self._execute_gradient_boosting_regressor()
+        if model_type == ModelType.LINEAR_REGRESSOR:
+            return self._execute_linear_regressor_model()
+        elif model_type == ModelType.PROPHET:
+            return self._execute_prophet_model()
+        elif model_type == ModelType.RANDOM_FOREST_REGRESSOR:
+            return self._execute_random_forest_regressor_model()
         else:
-            raise ValueError(f"Unsupported model type: {model_type}")
+            print("Unknown model type")
+            return None
 
 
-    def _execute_random_forest_regressor(self):
-        model = RandomForestTemperatureModel()
-        x_train, x_test, y_train, y_test = model.split_data(self.data)
-        model.train(x_train, y_train)
-        metrics = model.evaluate(x_test, y_test)
-        print(metrics)
-        importance = model.feature_importance()
-        print(importance.head(10))
-        model.plot_real_vs_predicted(x_test, y_test)
+    train_data = 'hist'
+    test_data = 'forecast'
 
-    def _execute_gradient_boosting_regressor(self):
-        gb_model = TemperatureGBModel()
-        x_train, x_test, y_train, y_test = gb_model.split_data(self.data)
-        gb_model.train(x_train, y_train)
-        metrics_gb = gb_model.evaluate(x_test, y_test)
-        print(metrics_gb)
-        gb_model.plot_real_vs_predicted(x_test, y_test)
-        gb_model.plot_scatter_real_vs_predicted(x_test, y_test)
+
+    def _execute_linear_regressor_model(self):
+        pass
+
+    def _execute_prophet_model(self):
+        pass
+
+    def _execute_random_forest_regressor_model(self):
+        pass
