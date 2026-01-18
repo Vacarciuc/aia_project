@@ -6,6 +6,8 @@ class DataType(Enum):
     DirtyData = "dirty_data",
     CleanedData = "cleaned_data",
     AnalyzedData = "analyzed_data",
+    PowerPlant = 'power_plant',
+    JoinData = 'join_data',
 
 CACHED_DATA = "cached_data"
 FORMAT_FILE = "xlsx"

@@ -1,8 +1,10 @@
+from dataclasses import dataclass
 from os import path
 from enum import Enum
 import sys
 
 import pandas as pd
+from numpy.ma.core import power
 from pandas import DataFrame
 from src.api_request import ApiRequest
 from src.openmeteo_parser import OpenMeteoParser
@@ -10,25 +12,58 @@ from src.data_cleaner import DataCleaner
 from src.save_data import SaveData, DataType
 from src.data_analysis import Analysis
 from src.feature_engineer import FeatureEngineer
+from src.power_plant_service import PowerPLantService
 
 
 class CommandEnum(Enum):
     API_REQUEST = "api_request",
     SAVE_CLEAN_DATA = "save_clean_data",
     ANALYZE_DATA = "analyze_data",
+    POWER_PLANT = "power_plant",
+    JOIN_DATA = "join_data",
 
+
+@dataclass
 class RequestParams:
-    latitude: float
-    longitude: float
-    start_date: str
-    end_date: str
+    latitude: float = 0.0
+    longitude: float = 0.0
+    start_date: str = ""
+    end_date: str = ""
 
 class Command:
-    def execute(self, command: CommandEnum, request_params: RequestParams) -> DataFrame | None:
+    def __init__(self):
+        self.request_params = RequestParams()
+
+    def execute(self, command: CommandEnum, serial_number:int) -> DataFrame | None:
+        request_params = RequestParams()
         file_name = 'weather_data.xlsx'
-        if command == CommandEnum.API_REQUEST:
-            self._api_request(request_params)
+        if command == CommandEnum.POWER_PLANT:
+            data = self._read_power_plant_file()
+            if data is None or data.empty:
+                print(f"No data found for serial {serial_number}")
+                return None
+
+            data.columns = data.columns.str.strip().str.lower()
+            row = data.iloc[1]
+
+            from_date = pd.to_datetime(row.get('from date')).strftime('%Y-%m-%d')
+            to_date = pd.to_datetime(row.get('to date')).strftime('%Y-%m-%d')
+
+            self.request_params.latitude = float(row.get('latitude'))
+            self.request_params.longitude = float(row.get('longitude'))
+            self.request_params.start_date = from_date
+            self.request_params.end_date = to_date
+            return data
+
+        elif command == CommandEnum.API_REQUEST:
+            print('request parameters:', self.request_params)
+            self._api_request(self.request_params)
             return self._read_file(DataType.DirtyData, file_name)
+
+        elif command == CommandEnum.JOIN_DATA:
+            self._join_data()
+            return self._read_file(DataType.JoinData, 'weather-power.xlsx')
+
         elif command == CommandEnum.SAVE_CLEAN_DATA:
             self._save_clean_data()
             return self._read_file(DataType.CleanedData, file_name)
@@ -46,9 +81,15 @@ class Command:
         df = pd.read_excel(file_path)
         return df
 
+    def _read_power_plant_file(self):
+        p_plant = PowerPLantService(84071569)
+        p_plant.exec()
+        df = self._read_file(DataType.PowerPlant, 'power-plant.xlsx')
+        return df
 
 
     def _api_request(self, request_params: RequestParams):
+        print('aici',request_params.latitude)
 
         lat = request_params.latitude
         lon = request_params.longitude
@@ -118,8 +159,25 @@ class Command:
         save_matrix = SaveData(file_name='corr_matrix', data_type=DataType.DirtyData)
         save_matrix.save(corr_matrix)
 
+    def _join_data(self):
+        df_dirty = self._read_file(DataType.DirtyData, file_name='weather_data.xlsx')
+        df_power = self._read_file(DataType.PowerPlant, file_name='power-plant.xlsx')
+        df_dirty['datetime'] = pd.to_datetime(
+            df_dirty['date'].astype(str) + ' ' + df_dirty['hour'].astype(str) + ':00'
+        )
+        df_power['datetime'] = pd.to_datetime(df_power['Date'])
+
+        merged_df = pd.merge(
+            df_power,
+            df_dirty,
+            on='datetime',
+            how='inner'
+        )
+        save_obj = SaveData(file_name='weather-power', data_type=DataType.JoinData)
+        save_obj.save(merged_df)
+
     def _save_clean_data(self, ):
-        df = self._read_file(DataType.DirtyData, file_name='weather_data.xlsx')
+        df = self._read_file(DataType.JoinData, file_name='weather-power.xlsx')
         cleaner = DataCleaner(raw_data=df)
         clean_data = cleaner.clean()
         saved_cleaned_data = SaveData(file_name='weather_data', data_type=DataType.CleanedData)
@@ -131,6 +189,7 @@ class Command:
         corr_matrix = info_data.correlation_matrix()
         save_matrix = SaveData(file_name='corr_matrix', data_type=DataType.CleanedData)
         save_matrix.save(corr_matrix)
+
 
     def _analyze_data(self):
         df = self._read_file(DataType.CleanedData, file_name='weather_data.xlsx')
