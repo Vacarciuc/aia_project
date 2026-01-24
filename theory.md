@@ -95,6 +95,5 @@ Pick relative_humidity_2m, highest correlation.
 - Installed Power (kWp)
 - hour
 - temperature_2m
-- et0_fao_evapotranspiration
 
 
