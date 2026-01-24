@@ -60,7 +60,7 @@ Name: Produced Energy (kWh), dtype: float64
 - Specific Energy (kWh/kWp) - derived from target and installed power
 - CO2 Avoided (tons) - derived from target
 - date, datetime - identifiers
-- 
+
 Latitude role is already captured, affects sun heigth, seasonality and day length. This data is already encoded in 
 angle_of_sun, month, hour + is_day.
 Longitude role is already captured, affects solar noon timing and hourly alignment with sunlight. Data already encoded in hour and angle_of_sun
@@ -93,7 +93,5 @@ Pick relative_humidity_2m, highest correlation.
 - temperature_2m
 - relative_humidity_2m
 - Installed Power (kWp)
-- hour
-- temperature_2m
 
 
