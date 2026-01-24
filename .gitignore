@@ -1,8 +1,6 @@
-./.venv
-./.idea
-.venv
-.idea
+.venv/
+.idea/
 .cache.sqlite
 /cached_data
 __pycache__
-./__pycache__
+.DS_store/

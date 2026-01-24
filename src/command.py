@@ -77,7 +77,8 @@ class Command:
 
     def _read_file(self, data_type:DataType, file_name:str) -> DataFrame:
         base_dir = str(path.dirname(__file__))
-        file_path = path.join(base_dir, '..\\', 'cached_data', data_type.value[0], file_name)
+        file_path = path.join(base_dir, '../', 'cached_data', data_type.value[0], file_name)
+        file_path = path.normpath(file_path)
         df = pd.read_excel(file_path)
         return df
 
