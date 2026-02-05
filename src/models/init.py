@@ -17,6 +17,7 @@ FEATURES = [
 
 RANDOM_STATE = 1
 TEST_SIZE = 0.2
+K_FOLD_SPLITS = 5
 
 print('Preparing data...')
 data = df[FEATURES + [TARGET]].dropna()
