@@ -3,18 +3,22 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.svm import SVR
-from src.models.utils import print_day
+from src.models.utils import print_day, print_days
 from sklearn.model_selection import KFold, cross_validate
 from src.models.init import FEATURES, X_train, X_test, y_train, y_test, K_FOLD_SPLITS, RANDOM_STATE
+
+MODEL_NAME = 'SVR'
 
 model = Pipeline(
    steps=[
       ('scaler', StandardScaler()),
       ('svr', SVR(
-         kernel='rbf', # rbf MAE=0.9 RMSE=1.77 R2=0.78, linear MAE=0.95 RMSE=1.78 R2=0.78, poly degree 3 MAE=1.6 RMSE=1.67 R2=0.52
+         kernel='rbf',
+         # rbf MAE=0.9 RMSE=1.77 R2=0.78, linear MAE=0.95 RMSE=1.78 R2=0.78, poly degree 3 MAE=1.6 RMSE=1.67 R2=0.52
          # degree=3
-         C=5, # 10 MAE=0.9 RMSE=1.77 R2=0.78, 5 MAE=0.9 RMSE=1.77 R2=0.78, 15 MAE=0.9 RMSE=1.77 R2=0.78   lower faster
-         epsilon=0.2, # 0.1 MAE=0.9 RMSE=1.77 R2=0.78, 0.2 MAE=0.9 RMSE=1.77 R2=0.78, 0.5 MAE=1.05 RMSE=1.778R2=0.78  higher faster
+         C=5,  # 10 MAE=0.9 RMSE=1.77 R2=0.78, 5 MAE=0.9 RMSE=1.77 R2=0.78, 15 MAE=0.9 RMSE=1.77 R2=0.78   lower faster
+         epsilon=0.2,
+         # 0.1 MAE=0.9 RMSE=1.77 R2=0.78, 0.2 MAE=0.9 RMSE=1.77 R2=0.78, 0.5 MAE=1.05 RMSE=1.778R2=0.78  higher faster
          gamma='scale'
       ))
    ]
@@ -59,6 +63,8 @@ print(f'MAE:  {mae:.4f} kWh')
 print(f'RMSE: {rmse:.4f} kWh')
 print(f'R²:   {r2:.4f}')
 
-print_day(0, model)
-print_day(1, model)
-print_day(2, model)
+print_days((9, 13), model, MODEL_NAME)
+
+# print_day(0, model, MODEL_NAME)
+# print_day(1, model, MODEL_NAME)
+# print_day(2, model, MODEL_NAME)

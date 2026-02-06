@@ -4,8 +4,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.model_selection import KFold, cross_validate
-from src.models.utils import print_day
+from src.models.utils import print_day, print_days
 from src.models.init import FEATURES, X_train, X_test, y_train, y_test, RANDOM_STATE, K_FOLD_SPLITS
+
+MODEL_NAME = 'HistGradientBoostingRegressor'
 
 model = Pipeline(
    steps=[
@@ -58,6 +60,8 @@ print(f'MAE:  {mae:.4f} kWh')
 print(f'RMSE: {rmse:.4f} kWh')
 print(f'R²:   {r2:.4f}')
 
-print_day(0, model)
-print_day(1, model)
-print_day(2, model)
+print_days((9, 13), model, MODEL_NAME)
+
+# print_day(0, model, MODEL_NAME)
+# print_day(1, model, MODEL_NAME)
+# print_day(2, model, MODEL_NAME)

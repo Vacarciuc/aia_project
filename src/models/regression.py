@@ -5,13 +5,18 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import KFold, cross_validate
-from src.models.utils import print_day
+from src.models.utils import print_day, print_days
 from src.models.init import FEATURES, X_train, X_test, y_train, y_test, RANDOM_STATE, K_FOLD_SPLITS
+
+MODEL_NAME = 'Ridge Linear Regression'
 
 model = Pipeline(
    steps=[
       ("scaler", StandardScaler()),
-      ("ridge", Ridge())
+      ("ridge", Ridge(
+         alpha=1,
+         random_state=RANDOM_STATE
+      ))
    ]
 )
 
@@ -62,6 +67,8 @@ print("\nIntercept:", intercept)
 print("\nCoefficients (standardized features):")
 print(coef_df.to_string(index=False))
 
-print_day(0, model)
-print_day(1, model)
-print_day(2, model)
+print_days((9, 13), model, MODEL_NAME)
+
+# print_day(0, model, MODEL_NAME)
+# print_day(1, model, MODEL_NAME)
+# print_day(2, model, MODEL_NAME)
