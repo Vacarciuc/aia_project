@@ -1,5 +1,6 @@
 import pandas as pd
 from pandas import DataFrame
+from os import path
 
 from src.save_data import SaveData, DataType
 
@@ -20,13 +21,18 @@ class PowerPLantService:
 
 
     def _read_meta_data(self, serial_number:int):
-        path_metadata = r"D:\PROJECT\Python\aia_project\cached_data\power_plant\PV Plants Metadata.xlsx"
+        dirname = path.dirname(__file__)
+        path_metadata = path.join(dirname, '..', 'cached_data', 'power_plant', 'PV Plants Metadata.xlsx')
+        path_metadata = path.normpath(path_metadata)
         data = pd.read_excel(path_metadata, header=1)
         result = data[data["PV Serial Number"] == serial_number]
         return result
 
     def _read_data_set_by_serial(self, serial_number:int):
-        path_data_set = r"D:\PROJECT\Python\aia_project\cached_data\power_plant\PV Plants Datasets.xlsx"
+        dirname = path.dirname(__file__)
+        path_data_set = path.join(dirname, '..', 'cached_data', 'power_plant', 'PV Plants Datasets.xlsx')
+        path_data_set = path.normpath(path_data_set)
+
         data = pd.read_excel(path_data_set, sheet_name=str(serial_number))
         return data
 
